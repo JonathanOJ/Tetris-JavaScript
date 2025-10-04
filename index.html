@@ -1,29 +1,99 @@
 <html>
-<head>
+  <head>
     <title>Tetris Game JS</title>
     <style>
-        #score{
-            display: inline-block;
-        }
-        div{
-            font-size: 25px;
-            font-weight: bold;
-            font-family: monospace;
-            text-align: center;
-        }
-        canvas{
-            display: block;
-            margin:0 auto;
-        }
+      #score {
+        display: inline-block;
+      }
+      div {
+        font-size: 25px;
+        font-weight: bold;
+        font-family: monospace;
+        text-align: center;
+      }
+      canvas {
+        display: block;
+        margin: 0 auto;
+      }
+
+      /* Modal de Pausa */
+      #pauseModal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        font-family: monospace;
+      }
+
+      #pauseModalContent {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #2c2c2c;
+        border: 3px solid #fff;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        color: white;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+      }
+
+      #pauseModalContent h2 {
+        margin: 0 0 15px 0;
+        font-size: 28px;
+        color: #ffff00;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      #pauseModalContent p {
+        margin: 10px 0;
+        font-size: 18px;
+        line-height: 1.4;
+      }
+
+      .pause-key {
+        background-color: #555;
+        border: 2px solid #fff;
+        border-radius: 5px;
+        padding: 5px 10px;
+        font-weight: bold;
+        color: #ffff00;
+      }
     </style>
-</head>
-<body>
-   <div>This Game Was Created By <a target="_blank" href="https://www.youtube.com/c/codeexplained">Code Explained</a></div><br>
+  </head>
+  <body>
+    <div>
+      This Game Was Created By
+      <a target="_blank" href="https://www.youtube.com/c/codeexplained"
+        >Code Explained</a
+      >
+    </div>
+    <br />
     <canvas id="tetris" width="200" height="400"></canvas>
     <div>
-        Score : <div id="score">0</div>
+      Score :
+      <div id="score">0</div>
     </div>
+    <div style="font-size: 14px; margin-top: 10px">
+      Controles: ← → ↑ ↓ para mover/rodar | P para pausar/retomar
+    </div>
+
+    <!-- Modal de Pausa -->
+    <div id="pauseModal">
+      <div id="pauseModalContent">
+        <h2 id="pauseTitle">JOGO PAUSADO</h2>
+        <p id="pauseMessage">
+          Pressione <span class="pause-key">P</span> para continuar
+        </p>
+      </div>
+    </div>
+
     <script src="tetrominoes.js"></script>
     <script src="tetris.js"></script>
-</body>
+  </body>
 </html>
