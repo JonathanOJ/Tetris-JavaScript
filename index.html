@@ -16,7 +16,7 @@
         margin: 0 auto;
       }
 
-      /* Modal de Pausa */
+      /* Modal de Pausa - Design Simplificado */
       #pauseModal {
         display: none;
         position: fixed;
@@ -25,7 +25,7 @@
         top: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: rgba(0, 0, 0, 0.7);
         font-family: monospace;
       }
 
@@ -35,34 +35,38 @@
         left: 50%;
         transform: translate(-50%, -50%);
         background-color: #2c2c2c;
-        border: 3px solid #fff;
-        border-radius: 10px;
+        border: 2px solid #4a9eff;
+        border-radius: 12px;
         padding: 30px;
         text-align: center;
         color: white;
-        box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        min-width: 280px;
+        box-shadow: 0 0 20px rgba(74, 158, 255, 0.3);
       }
 
       #pauseModalContent h2 {
-        margin: 0 0 15px 0;
-        font-size: 28px;
-        color: #ffff00;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        margin: 0 0 20px 0;
+        font-size: 24px;
+        color: #4a9eff;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
       }
 
       #pauseModalContent p {
         margin: 10px 0;
-        font-size: 18px;
+        font-size: 16px;
         line-height: 1.4;
+        color: #e0e0e0;
       }
 
       .pause-key {
-        background-color: #555;
-        border: 2px solid #fff;
-        border-radius: 5px;
-        padding: 5px 10px;
+        background-color: #4a9eff;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        padding: 6px 12px;
         font-weight: bold;
-        color: #ffff00;
+        color: white;
+        font-size: 14px;
+        box-shadow: 0 2px 4px rgba(74, 158, 255, 0.3);
       }
 
       /* Modal de Game Over - Otimizado */
@@ -182,7 +186,7 @@
     <!-- Modal de Pausa -->
     <div id="pauseModal">
       <div id="pauseModalContent">
-        <h2 id="pauseTitle">JOGO PAUSADO</h2>
+        <h2 id="pauseTitle">⏸️ PAUSADO</h2>
         <p id="pauseMessage">
           Pressione <span class="pause-key">P</span> para continuar
         </p>

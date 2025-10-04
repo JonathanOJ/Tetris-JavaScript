@@ -137,14 +137,31 @@ function showPauseModal() {
   const message = document.getElementById("pauseMessage");
 
   if (isAutoPaused) {
-    title.textContent = "JOGO PAUSADO";
+    title.textContent = "⏸️ PAUSADO";
     message.innerHTML =
       'Janela perdeu foco<br>Pressione <span class="pause-key">P</span> para retomar';
   } else if (isPaused) {
-    title.textContent = "JOGO PAUSADO";
+    title.textContent = "⏸️ PAUSADO";
     message.innerHTML =
       'Pressione <span class="pause-key">P</span> para continuar';
   }
+
+  // Aplicar cores do tema atual
+  const pauseModalContent = document.getElementById("pauseModalContent");
+  const pauseKeys = document.querySelectorAll(".pause-key");
+
+  if (pauseModalContent) {
+    pauseModalContent.style.borderColor = currentTheme.ui.accent;
+    pauseModalContent.style.boxShadow = `0 0 20px ${currentTheme.ui.accent}50`;
+  }
+
+  if (title) {
+    title.style.color = currentTheme.ui.accent;
+  }
+
+  pauseKeys.forEach((key) => {
+    key.style.backgroundColor = currentTheme.ui.accent;
+  });
 
   modal.style.display = "block";
 }
