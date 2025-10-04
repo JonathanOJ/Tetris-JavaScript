@@ -5,14 +5,109 @@ const scoreElement = document.getElementById("score");
 const ROW = 20;
 const COL = (COLUMN = 10);
 const SQ = (squareSize = 20);
-const VACANT = "WHITE"; // color of an empty square
 
-// draw a square
+// SISTEMA DE TEMAS VISUAIS - Definir antes de usar
+const THEMES = {
+  classic: {
+    name: "Clássico",
+    vacant: "WHITE",
+    stroke: "BLACK",
+    ui: {
+      background: "#ffffff",
+      text: "#000000",
+      accent: "#333333",
+      score: "#000000",
+    },
+    pieces: {
+      Z: "red",
+      S: "green",
+      T: "yellow",
+      O: "blue",
+      L: "purple",
+      I: "cyan",
+      J: "orange",
+    },
+  },
+  neon: {
+    name: "Neon",
+    vacant: "#0a0a0a",
+    stroke: "#333",
+    ui: {
+      background: "#000000",
+      text: "#00ffff",
+      accent: "#ff0080",
+      score: "#00ff00",
+    },
+    pieces: {
+      Z: "#ff0080",
+      S: "#00ff80",
+      T: "#ffff00",
+      O: "#0080ff",
+      L: "#8000ff",
+      I: "#00ffff",
+      J: "#ff8000",
+    },
+  },
+  pastel: {
+    name: "Pastel",
+    vacant: "#f8f8f8",
+    stroke: "#ddd",
+    ui: {
+      background: "#fff5f5",
+      text: "#8b5a5a",
+      accent: "#d4a6a6",
+      score: "#8b5a5a",
+    },
+    pieces: {
+      Z: "#ffb3ba",
+      S: "#baffc9",
+      T: "#ffffba",
+      O: "#bae1ff",
+      L: "#d4baff",
+      I: "#baffff",
+      J: "#ffdfba",
+    },
+  },
+  dark: {
+    name: "Sombrio",
+    vacant: "#1a1a1a",
+    stroke: "#444",
+    ui: {
+      background: "#0d1117",
+      text: "#c9d1d9",
+      accent: "#f0f6fc",
+      score: "#58a6ff",
+    },
+    pieces: {
+      Z: "#8b0000",
+      S: "#006400",
+      T: "#8b8b00",
+      O: "#000080",
+      L: "#4b0082",
+      I: "#008b8b",
+      J: "#8b4500",
+    },
+  },
+};
+
+// Tema atual e controles
+let currentThemeIndex = 0;
+const themeNames = Object.keys(THEMES);
+let currentTheme = THEMES[themeNames[currentThemeIndex]];
+// draw a square with theme support
 function drawSquare(x, y, color) {
-  ctx.fillStyle = color;
-  ctx.fillRect(x * SQ, y * SQ, SQ, SQ);
+  // Se a cor é um identificador de peça (Z, S, T, etc), usar a cor do tema
+  if (typeof color === "string" && currentTheme.pieces[color]) {
+    ctx.fillStyle = currentTheme.pieces[color];
+  } else if (color === "VACANT" || color === currentTheme.vacant) {
+    ctx.fillStyle = currentTheme.vacant;
+  } else {
+    // Para cores específicas ou cores antigas
+    ctx.fillStyle = color;
+  }
 
-  ctx.strokeStyle = "BLACK";
+  ctx.fillRect(x * SQ, y * SQ, SQ, SQ);
+  ctx.strokeStyle = currentTheme.stroke;
   ctx.strokeRect(x * SQ, y * SQ, SQ, SQ);
 }
 
@@ -22,7 +117,7 @@ let board = [];
 for (r = 0; r < ROW; r++) {
   board[r] = [];
   for (c = 0; c < COL; c++) {
-    board[r][c] = VACANT;
+    board[r][c] = "VACANT";
   }
 }
 
@@ -88,16 +183,100 @@ function hideGameOverModal() {
 
 drawBoard();
 
-// the pieces and their colors
+// Função para aplicar cores da interface
+function applyUITheme() {
+  const body = document.body;
+  const scoreElement = document.getElementById("score");
+  const allDivs = document.querySelectorAll("div");
+  const allLinks = document.querySelectorAll("a");
 
+  // Aplicar cor de fundo
+  body.style.backgroundColor = currentTheme.ui.background;
+  body.style.color = currentTheme.ui.text;
+
+  // Aplicar cor do score especificamente
+  if (scoreElement) {
+    scoreElement.style.color = currentTheme.ui.score;
+  }
+
+  // Aplicar cor dos textos gerais
+  allDivs.forEach((div) => {
+    if (div.id !== "score") {
+      div.style.color = currentTheme.ui.text;
+    }
+  });
+
+  // Manter links com cor de destaque
+  allLinks.forEach((link) => {
+    link.style.color = currentTheme.ui.accent;
+  });
+}
+
+// Função para alternar tema
+function switchTheme() {
+  currentThemeIndex = (currentThemeIndex + 1) % themeNames.length;
+  currentTheme = THEMES[themeNames[currentThemeIndex]];
+
+  // Aplicar cores da interface
+  applyUITheme();
+
+  // Redesenhar tudo com novo tema
+  drawBoard();
+  if (!gameOver && p) {
+    p.draw();
+  }
+
+  // Mostrar notificação do tema atual
+  showThemeNotification();
+}
+
+// Mostrar notificação do tema atual
+function showThemeNotification() {
+  // Criar elemento de notificação se não existir
+  let notification = document.getElementById("themeNotification");
+  if (!notification) {
+    notification = document.createElement("div");
+    notification.id = "themeNotification";
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 1000;
+      transition: opacity 0.3s ease;
+      border: 2px solid;
+    `;
+    document.body.appendChild(notification);
+  }
+
+  // Aplicar cores do tema atual à notificação
+  notification.style.backgroundColor = currentTheme.ui.accent;
+  notification.style.color = currentTheme.ui.background;
+  notification.style.borderColor = currentTheme.ui.text;
+
+  // Atualizar conteúdo e mostrar
+  notification.textContent = `🎨 Tema: ${currentTheme.name}`;
+  notification.style.opacity = "1";
+
+  // Esconder após 2 segundos
+  setTimeout(() => {
+    notification.style.opacity = "0";
+  }, 2500);
+}
+
+// the pieces and their colors (agora usando tema dinâmico)
 const PIECES = [
-  [Z, "red"],
-  [S, "green"],
-  [T, "yellow"],
-  [O, "blue"],
-  [L, "purple"],
-  [I, "cyan"],
-  [J, "orange"],
+  [Z, "Z"],
+  [S, "S"],
+  [T, "T"],
+  [O, "O"],
+  [L, "L"],
+  [I, "I"],
+  [J, "J"],
 ];
 
 // generate random pieces
@@ -145,7 +324,7 @@ Piece.prototype.draw = function () {
 // undraw a piece
 
 Piece.prototype.unDraw = function () {
-  this.fill(VACANT);
+  this.fill("VACANT");
 };
 
 // move Down the piece
@@ -229,7 +408,7 @@ Piece.prototype.lock = function () {
   for (r = 0; r < ROW; r++) {
     let isRowFull = true;
     for (c = 0; c < COL; c++) {
-      isRowFull = isRowFull && board[r][c] != VACANT;
+      isRowFull = isRowFull && board[r][c] != "VACANT";
     }
     if (isRowFull) {
       // if the row is full
@@ -241,7 +420,7 @@ Piece.prototype.lock = function () {
       }
       // the top row board[0][..] has no row above it
       for (c = 0; c < COL; c++) {
-        board[0][c] = VACANT;
+        board[0][c] = "VACANT";
       }
       // increment the score and line counter
       score += 10;
@@ -277,7 +456,7 @@ Piece.prototype.collision = function (x, y, piece) {
         continue;
       }
       // check if there is a locked piece alrady in place
-      if (board[newY][newX] != VACANT) {
+      if (board[newY][newX] != "VACANT") {
         return true;
       }
     }
@@ -327,6 +506,12 @@ function CONTROL(event) {
       showPauseModal();
     }
     return; // Não executa outros controles quando pausando/despausando
+  }
+
+  // Tecla T (keyCode 84) - Alternar tema visual
+  if (event.keyCode == 84) {
+    switchTheme();
+    return;
   }
 
   // Só permite outros controles se o jogo não estiver pausado
@@ -379,6 +564,9 @@ function drop() {
   }
 }
 
+// Aplicar tema inicial
+applyUITheme();
+
 drop();
 
 // função para reiniciar o jogo
@@ -396,7 +584,7 @@ function restartGame() {
   // Limpar o board
   for (r = 0; r < ROW; r++) {
     for (c = 0; c < COL; c++) {
-      board[r][c] = VACANT;
+      board[r][c] = "VACANT";
     }
   }
 
@@ -412,6 +600,9 @@ function restartGame() {
 
   // Esconder modal de Game Over
   hideGameOverModal();
+
+  // Aplicar tema atual
+  applyUITheme();
 
   // Reiniciar o loop do jogo
   drop();
