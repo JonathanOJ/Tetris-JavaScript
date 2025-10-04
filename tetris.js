@@ -59,6 +59,33 @@ function hidePauseModal() {
   modal.style.display = "none";
 }
 
+// controlar modal de game over
+function showGameOverModal() {
+  const modal = document.getElementById("gameOverModal");
+  const finalScoreElement = document.getElementById("finalScore");
+  const linesClearedElement = document.getElementById("linesCleared");
+  const gameTimeElement = document.getElementById("gameTime");
+
+  // Calcular tempo de jogo
+  const gameEndTime = Date.now();
+  const totalTime = Math.floor((gameEndTime - gameStartTime) / 1000);
+  const minutes = Math.floor(totalTime / 60);
+  const seconds = totalTime % 60;
+  const timeString = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+
+  // Atualizar elementos
+  finalScoreElement.textContent = score;
+  linesClearedElement.textContent = linesCleared;
+  gameTimeElement.textContent = timeString;
+
+  modal.style.display = "block";
+}
+
+function hideGameOverModal() {
+  const modal = document.getElementById("gameOverModal");
+  modal.style.display = "none";
+}
+
 drawBoard();
 
 // the pieces and their colors
@@ -189,9 +216,9 @@ Piece.prototype.lock = function () {
       }
       // pieces to lock on top = game over
       if (this.y + r < 0) {
-        alert("Game Over");
-        // stop request animation frame
+        // Parar o jogo e mostrar modal de Game Over
         gameOver = true;
+        showGameOverModal();
         break;
       }
       // we lock the piece
@@ -216,8 +243,9 @@ Piece.prototype.lock = function () {
       for (c = 0; c < COL; c++) {
         board[0][c] = VACANT;
       }
-      // increment the score
+      // increment the score and line counter
       score += 10;
+      linesCleared++;
     }
   }
   // update the board
@@ -323,10 +351,12 @@ function CONTROL(event) {
 // drop the piece every 1sec
 
 let dropStart = Date.now();
+let gameStartTime = Date.now(); // tempo de início do jogo
 let gameOver = false;
 let isPaused = false; // controla pausa manual
 let isWindowBlurred = false; // controla se janela perdeu foco
 let isAutoPaused = false; // controla se está pausado automaticamente
+let linesCleared = 0; // contador de linhas limpas
 function drop() {
   let now = Date.now();
   let delta = now - dropStart;
@@ -350,3 +380,39 @@ function drop() {
 }
 
 drop();
+
+// função para reiniciar o jogo
+function restartGame() {
+  // Resetar variáveis do jogo
+  gameOver = false;
+  isPaused = false;
+  isAutoPaused = false;
+  isWindowBlurred = false;
+  score = 0;
+  linesCleared = 0;
+  dropStart = Date.now();
+  gameStartTime = Date.now();
+
+  // Limpar o board
+  for (r = 0; r < ROW; r++) {
+    for (c = 0; c < COL; c++) {
+      board[r][c] = VACANT;
+    }
+  }
+
+  // Gerar nova peça
+  p = randomPiece();
+
+  // Redesenhar o board e a peça
+  drawBoard();
+  p.draw();
+
+  // Atualizar pontuação na tela
+  scoreElement.innerHTML = score;
+
+  // Esconder modal de Game Over
+  hideGameOverModal();
+
+  // Reiniciar o loop do jogo
+  drop();
+}
