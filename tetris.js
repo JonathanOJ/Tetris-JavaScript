@@ -595,7 +595,7 @@ window.addEventListener("focus", function () {
 function CONTROL(event) {
   // Tecla P (keyCode 80) - Pausar/Despausar o jogo
   if (event.keyCode == 80) {
-    if (isPaused) {
+    if (isPaused && !gameOver) {
       // Despausar jogo (pausa manual)
       isPaused = false;
       hidePauseModal();
@@ -604,7 +604,7 @@ function CONTROL(event) {
 
       // Retomar música
       playMusic();
-    } else if (isAutoPaused) {
+    } else if (isAutoPaused && !gameOver) {
       // Retomar após pausa automática
       isAutoPaused = false;
       hidePauseModal();
@@ -613,7 +613,7 @@ function CONTROL(event) {
 
       // Retomar música
       playMusic();
-    } else {
+    } else if (!isPaused && !isAutoPaused && !gameOver) {
       // Pausar manualmente
       isPaused = true;
       showPauseModal();
@@ -686,13 +686,11 @@ function drop() {
   }
 
   // Se o jogo estiver pausado, resetar o contador para evitar queda rápida ao despausar
-  if (isPaused || isAutoPaused) {
+  if (isPaused || isAutoPaused && !gameOver) {
     dropStart = Date.now();
     // Mostrar modal de pausa
     showPauseModal();
-    if (!backgroundMusic.paused) {
-      backgroundMusic.pause();
-    }
+    if (!backgroundMusic.paused) backgroundMusic.pause();
   }
 
   if (!gameOver) {
