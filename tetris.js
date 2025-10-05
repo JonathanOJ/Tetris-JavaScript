@@ -638,15 +638,13 @@ function CONTROL(event) {
 
   if (event.keyCode == 37) {
     p.moveLeft();
-    dropStart = Date.now();
   } else if (event.keyCode == 38) {
     p.rotate();
-    dropStart = Date.now();
   } else if (event.keyCode == 39) {
     p.moveRight();
-    dropStart = Date.now();
   } else if (event.keyCode == 40) {
     p.moveDown();
+    dropStart = Date.now();
   }
 }
 
@@ -654,11 +652,18 @@ function CONTROL(event) {
 
 let dropStart = Date.now();
 let gameStartTime = Date.now(); // tempo de início do jogo
+let dropInterval = 1000;
 let gameOver = false;
 let isPaused = false; // controla pausa manual
 let isWindowBlurred = false; // controla se janela perdeu foco
 let isAutoPaused = false; // controla se está pausado automaticamente
 let linesCleared = 0; // contador de linhas limpas
+
+function updateDropInterval() {
+  dropInterval = Math.max(200, 1000 - Math.floor(score / 50) * 50);
+}
+
+
 function drop() {
   let now = Date.now();
   let delta = now - dropStart;
