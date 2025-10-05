@@ -204,13 +204,17 @@ function showPauseModal() {
 
   if (isAutoPaused) {
     title.textContent = "⏸️ PAUSADO";
-    message.innerHTML =
-      'Janela perdeu foco<br>Pressione <span class="pause-key">P</span> para retomar';
+    message.innerHTML = `
+      Janela perdeu foco<br>Pressione <span class="pause-key">P</span> para retomar<br><br>
+      Pressione <span class="pause-key">R</span> para reiniciar
+      `;
   } else if (isPaused) {
     title.textContent = "⏸️ PAUSADO";
     message.innerHTML =
-      'Pressione <span class="pause-key">P</span> para continuar';
-  }
+      message.innerHTML = `
+        Pressione <span class="pause-key">P</span> para continuar<br><br>
+        Pressione <span class="pause-key">R</span> para reiniciar
+`;  }
 
   // Aplicar cores do tema atual
   const pauseModalContent = document.getElementById("pauseModalContent");
@@ -616,6 +620,13 @@ function CONTROL(event) {
       pauseMusic();
     }
     return; // Não executa outros controles quando pausando/despausando
+  }
+
+  // Tecla R (keyCode 82) - Reiniciar jogo
+  if (event.keyCode == 82) {
+    hidePauseModal();
+    restartGame();
+    return;
   }
 
 
