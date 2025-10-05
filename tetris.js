@@ -90,10 +90,76 @@ const THEMES = {
   },
 };
 
+// --- AUDIO ---
+let isMuted = false;
+// Música de fundo
+const backgroundMusic = new Audio("sounds/music.mp3");
+backgroundMusic.loop = true;
+backgroundMusic.volume = 0.4;
+
+const stageClearAudio = new Audio("sounds/stage_clear.mp3");
+stageClearAudio.volume = 0.6;
+
+const rotateAudio = new Audio("sounds/rotate.mp3");
+stageClearAudio.volume = 0.6;
+
+const collisionAudio = new Audio("sounds/collision.mp3");
+stageClearAudio.volume = 0.6;
+
+// Função para tocar música de fundo
+function playMusic() {
+  backgroundMusic.play().catch((e) => {
+    console.warn("🎵 Audio bloqueado pelo navegador:", e);
+  });
+}
+
+// Função para pausar música de fundo
+function pauseMusic() {
+  backgroundMusic.pause();
+}
+
+const audios = [
+  backgroundMusic,
+  stageClearAudio,
+  rotateAudio
+];
+
+// Tocar música na primeira interação do usuário (tecla ou botão)
+function startMusicOnInteraction() {
+  const startMusic = () => {
+    playMusic();
+    document.removeEventListener("keydown", startMusic);
+    document.removeEventListener("click", startMusic);
+  };
+  document.addEventListener("keydown", startMusic);
+  document.addEventListener("click", startMusic);
+}
+
+startMusicOnInteraction();
+
+// Função para aplicar mute/unmute
+function toggleMute() {
+  isMuted = !isMuted;
+
+  audios.forEach((audio) => {
+    if (isMuted) {
+      audio.pause();
+    } else {
+      // Só tocar se não for música de efeito já pausada
+      if (audio === backgroundMusic) {
+        audio.play().catch((e) => console.warn("🎵 Audio bloqueado:", e));
+      }
+    }
+  });
+
+  console.log(isMuted ? "🔇 Mudo" : "🔊 Som ativado");
+}
+
 // Tema atual e controles
 let currentThemeIndex = 0;
 const themeNames = Object.keys(THEMES);
 let currentTheme = THEMES[themeNames[currentThemeIndex]];
+
 // draw a square with theme support
 function drawSquare(x, y, color) {
   // Se a cor é um identificador de peça (Z, S, T, etc), usar a cor do tema
@@ -191,6 +257,13 @@ function showGameOverModal() {
   gameTimeElement.textContent = timeString;
 
   modal.style.display = "block";
+
+  if (!isMuted) {
+    const gameOverMusic = new Audio("sounds/game_over.mp3");
+    gameOverMusic.volume = 0.6;
+    pauseMusic();
+    gameOverMusic.play().catch((e) => console.warn("Audio bloqueado:", e));
+  }
 }
 
 function hideGameOverModal() {
@@ -352,7 +425,13 @@ Piece.prototype.moveDown = function () {
     this.y++;
     this.draw();
   } else {
-    // we lock the piece and generate a new one
+    // toca som de colisão se não estiver mutado
+    if (!isMuted) {
+      collisionAudio.currentTime = 0; // reinicia o áudio
+      collisionAudio.play().catch((e) => console.warn("Audio bloqueado:", e));
+    }
+
+    // travar peça e gerar nova
     this.lock();
     p = randomPiece();
   }
@@ -398,29 +477,32 @@ Piece.prototype.rotate = function () {
     this.tetrominoN = (this.tetrominoN + 1) % this.tetromino.length; // (0+1)%4 => 1
     this.activeTetromino = this.tetromino[this.tetrominoN];
     this.draw();
+    if (this.tetromino.length > 1 && !isMuted) {
+      rotateAudio.currentTime = 0;
+      rotateAudio.play().catch((e) => console.warn("Audio bloqueado:", e));
+    }
   }
 };
 
 let score = 0;
 
 Piece.prototype.lock = function () {
+  let lineClearedThisTurn = false; // flag para tocar áudio apenas uma vez
+
   for (r = 0; r < this.activeTetromino.length; r++) {
     for (c = 0; c < this.activeTetromino.length; c++) {
-      // we skip the vacant squares
-      if (!this.activeTetromino[r][c]) {
-        continue;
-      }
-      // pieces to lock on top = game over
+      if (!this.activeTetromino[r][c]) continue;
+
       if (this.y + r < 0) {
-        // Parar o jogo e mostrar modal de Game Over
         gameOver = true;
         showGameOverModal();
         break;
       }
-      // we lock the piece
+
       board[this.y + r][this.x + c] = this.color;
     }
   }
+
   // remove full rows
   for (r = 0; r < ROW; r++) {
     let isRowFull = true;
@@ -428,30 +510,36 @@ Piece.prototype.lock = function () {
       isRowFull = isRowFull && board[r][c] != "VACANT";
     }
     if (isRowFull) {
-      // if the row is full
-      // we move down all the rows above it
+      lineClearedThisTurn = true; // marca que pelo menos uma linha foi limpa
+
+      // move todas as linhas acima para baixo
       for (y = r; y > 1; y--) {
         for (c = 0; c < COL; c++) {
           board[y][c] = board[y - 1][c];
         }
       }
-      // the top row board[0][..] has no row above it
+
+      // limpar top row
       for (c = 0; c < COL; c++) {
         board[0][c] = "VACANT";
       }
-      // increment the score and line counter
+
       score += 10;
       linesCleared++;
     }
   }
-  // update the board
-  drawBoard();
 
-  // update the score
+  // toca áudio apenas uma vez se alguma linha foi limpa
+  if (lineClearedThisTurn && !isMuted) {
+    stageClearAudio.currentTime = 0;
+    stageClearAudio.play().catch((e) => console.warn("Audio bloqueado:", e));
+  }
+
+  drawBoard();
   scoreElement.innerHTML = score;
 };
 
-// collision fucntion
+// collision function
 
 Piece.prototype.collision = function (x, y, piece) {
   for (r = 0; r < piece.length; r++) {
@@ -506,28 +594,40 @@ function CONTROL(event) {
     if (isPaused) {
       // Despausar jogo (pausa manual)
       isPaused = false;
-      // Esconder modal e redesenhar o jogo
       hidePauseModal();
       drawBoard();
       p.draw();
+
+      // Retomar música
+      playMusic();
     } else if (isAutoPaused) {
       // Retomar após pausa automática
       isAutoPaused = false;
-      // Esconder modal e redesenhar o jogo
       hidePauseModal();
       drawBoard();
       p.draw();
+
+      // Retomar música
+      playMusic();
     } else {
       // Pausar manualmente
       isPaused = true;
       showPauseModal();
+      pauseMusic();
     }
     return; // Não executa outros controles quando pausando/despausando
   }
 
+
   // Tecla T (keyCode 84) - Alternar tema visual
   if (event.keyCode == 84) {
     switchTheme();
+    return;
+  }
+
+  // Tecla M (77) - mute/unmute
+  if (event.keyCode == 77) {
+    toggleMute();
     return;
   }
 
@@ -574,6 +674,9 @@ function drop() {
     dropStart = Date.now();
     // Mostrar modal de pausa
     showPauseModal();
+    if (!backgroundMusic.paused) {
+      backgroundMusic.pause();
+    }
   }
 
   if (!gameOver) {
@@ -583,7 +686,6 @@ function drop() {
 
 // Aplicar tema inicial
 applyUITheme();
-
 drop();
 
 // função para reiniciar o jogo
@@ -620,7 +722,10 @@ function restartGame() {
 
   // Aplicar tema atual
   applyUITheme();
-
+  if (!isMuted) {
+    backgroundMusic.currentTime = 0;
+    backgroundMusic.play();
+  }
   // Reiniciar o loop do jogo
   drop();
 }
