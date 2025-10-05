@@ -632,7 +632,7 @@ function CONTROL(event) {
   }
 
   // Só permite outros controles se o jogo não estiver pausado
-  if (isPaused || isAutoPaused) {
+  if (isPaused || isAutoPaused || gameOver) {
     return;
   }
 
