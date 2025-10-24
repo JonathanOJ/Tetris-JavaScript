@@ -6,6 +6,33 @@ const ROW = 20;
 const COL = (COLUMN = 10);
 const SQ = (squareSize = 20);
 
+// ==========================================
+// CONFIGURAÇÕES DE CONTROLES (KEY CODES)
+// ==========================================
+const KEY_CODES = {
+  // Controles de movimento
+  ARROW_LEFT: 37,
+  ARROW_UP: 38,
+  ARROW_RIGHT: 39,
+  ARROW_DOWN: 40,
+
+  // Controles de jogo
+  PAUSE: 80, // Tecla P
+  RESTART: 82, // Tecla R
+  THEME: 84, // Tecla T
+  MUTE: 77, // Tecla M
+};
+
+// ==========================================
+// CONFIGURAÇÕES DE VELOCIDADE DO JOGO
+// ==========================================
+const GAME_SPEED = {
+  INITIAL_DROP_INTERVAL: 1000, // 1 segundo (em milissegundos)
+  MIN_DROP_INTERVAL: 200, // Velocidade máxima: 200ms
+  SPEED_INCREASE_THRESHOLD: 50, // A cada 50 pontos, aumenta velocidade
+  SPEED_INCREASE_AMOUNT: 50, // Reduz 50ms a cada threshold
+};
+
 // SISTEMA DE TEMAS VISUAIS - Definir antes de usar
 const THEMES = {
   classic: {
@@ -614,8 +641,8 @@ window.addEventListener("focus", function () {
 });
 
 function CONTROL(event) {
-  // Tecla P (keyCode 80) - Pausar/Despausar o jogo
-  if (event.keyCode == 80) {
+  // Tecla P - Pausar/Despausar o jogo
+  if (event.keyCode === KEY_CODES.PAUSE) {
     if (isPaused && !gameOver) {
       // Despausar jogo (pausa manual)
       isPaused = false;
@@ -643,21 +670,21 @@ function CONTROL(event) {
     return; // Não executa outros controles quando pausando/despausando
   }
 
-  // Tecla R (keyCode 82) - Reiniciar jogo
-  if (event.keyCode == 82) {
+  // Tecla R - Reiniciar jogo
+  if (event.keyCode === KEY_CODES.RESTART) {
     hidePauseModal();
     restartGame();
     return;
   }
 
-  // Tecla T (keyCode 84) - Alternar tema visual
-  if (event.keyCode == 84) {
+  // Tecla T - Alternar tema visual
+  if (event.keyCode === KEY_CODES.THEME) {
     switchTheme();
     return;
   }
 
-  // Tecla M (77) - mute/unmute
-  if (event.keyCode == 77) {
+  // Tecla M - mute/unmute
+  if (event.keyCode === KEY_CODES.MUTE) {
     toggleMute();
     return;
   }
@@ -667,13 +694,14 @@ function CONTROL(event) {
     return;
   }
 
-  if (event.keyCode == 37) {
+  // Controles de movimento
+  if (event.keyCode === KEY_CODES.ARROW_LEFT) {
     p.moveLeft();
-  } else if (event.keyCode == 38) {
+  } else if (event.keyCode === KEY_CODES.ARROW_UP) {
     p.rotate();
-  } else if (event.keyCode == 39) {
+  } else if (event.keyCode === KEY_CODES.ARROW_RIGHT) {
     p.moveRight();
-  } else if (event.keyCode == 40) {
+  } else if (event.keyCode === KEY_CODES.ARROW_DOWN) {
     p.moveDown();
     dropStart = Date.now();
   }
@@ -683,7 +711,7 @@ function CONTROL(event) {
 
 let dropStart = Date.now();
 let gameStartTime = Date.now(); // tempo de início do jogo
-let dropInterval = 1000;
+let dropInterval = GAME_SPEED.INITIAL_DROP_INTERVAL;
 let gameOver = false;
 let isPaused = false; // controla pausa manual
 let isWindowBlurred = false; // controla se janela perdeu foco
@@ -691,7 +719,13 @@ let isAutoPaused = false; // controla se está pausado automaticamente
 let linesCleared = 0; // contador de linhas limpas
 
 function updateDropInterval() {
-  dropInterval = Math.max(200, 1000 - Math.floor(score / 50) * 50);
+  const speedReduction =
+    Math.floor(score / GAME_SPEED.SPEED_INCREASE_THRESHOLD) *
+    GAME_SPEED.SPEED_INCREASE_AMOUNT;
+  dropInterval = Math.max(
+    GAME_SPEED.MIN_DROP_INTERVAL,
+    GAME_SPEED.INITIAL_DROP_INTERVAL - speedReduction
+  );
 }
 
 function drop() {
@@ -699,7 +733,7 @@ function drop() {
   let delta = now - dropStart;
 
   // Só move a peça se o jogo não estiver pausado (manual ou automaticamente)
-  if (!isPaused && !isAutoPaused && delta > 1000) {
+  if (!isPaused && !isAutoPaused && delta > GAME_SPEED.INITIAL_DROP_INTERVAL) {
     p.moveDown();
     dropStart = Date.now();
   }
