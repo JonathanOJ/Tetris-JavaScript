@@ -128,10 +128,10 @@ const stageClearAudio = new Audio("sounds/stage_clear.mp3");
 stageClearAudio.volume = 0.6;
 
 const rotateAudio = new Audio("sounds/rotate.mp3");
-stageClearAudio.volume = 0.6;
+rotateAudio.volume = 0.6;
 
 const collisionAudio = new Audio("sounds/collision.mp3");
-stageClearAudio.volume = 0.6;
+collisionAudio.volume = 0.6;
 
 // Função para tocar música de fundo
 function playMusic() {
@@ -264,21 +264,24 @@ function hidePauseModal() {
   hideModal("pauseModal");
 }
 
+// #Extract Method
+// Calcula o tempo de jogo formatado em MM:SS Refator #1 Jonathan
+function calculateGameTime(startTime) {
+  const gameEndTime = Date.now();
+  const totalTime = Math.floor((gameEndTime - startTime) / 1000);
+  const minutes = Math.floor(totalTime / 60);
+  const seconds = totalTime % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 // controlar modal de game over
 function showGameOverModal() {
   const elements = getElements(["finalScore", "linesCleared", "gameTime"]);
 
-  // Calcular tempo de jogo
-  const gameEndTime = Date.now();
-  const totalTime = Math.floor((gameEndTime - gameStartTime) / 1000);
-  const minutes = Math.floor(totalTime / 60);
-  const seconds = totalTime % 60;
-  const timeString = `${minutes}:${seconds.toString().padStart(2, "0")}`;
-
   // Atualizar elementos
   elements.finalScore.textContent = score;
   elements.linesCleared.textContent = linesCleared;
-  elements.gameTime.textContent = timeString;
+  elements.gameTime.textContent = calculateGameTime(gameStartTime);
 
   showModal("gameOverModal");
 
@@ -479,7 +482,7 @@ Piece.prototype.moveDown = function () {
   } else {
     // toca som de colisão se não estiver mutado
     if (!isMuted) {
-      collisionAudio.currentTime = 0; // reinicia o áudio
+      collisionAudio.currentTime = 0;
       collisionAudio.play().catch((e) => console.warn("Audio bloqueado:", e));
     }
 
@@ -507,29 +510,51 @@ Piece.prototype.moveLeft = function () {
   }
 };
 
+// #Decompose Conditional
+
+// Verifica se a peça está perto da parede direita
+function isNearRightWall(piece) {
+  return piece.x > COL / 2;
+}
+
+// Verifica se a rotação causará colisão
+
+function willCollideOnRotation(piece, pattern) {
+  return piece.collision(0, 0, pattern);
+}
+
+// Verifica se a peça pode ser rotacionada
+function canRotate(piece, kick, pattern) {
+  return !piece.collision(kick, 0, pattern);
+}
+
+// Verifica se deve tocar som de rotação
+function shouldPlayRotateSound(piece) {
+  return piece.tetromino.length > 1;
+}
+
 // rotate the piece
 Piece.prototype.rotate = function () {
   let nextPattern =
     this.tetromino[(this.tetrominoN + 1) % this.tetromino.length];
   let kick = 0;
 
-  if (this.collision(0, 0, nextPattern)) {
-    if (this.x > COL / 2) {
-      // it's the right wall
-      kick = -1; // we need to move the piece to the left
+  if (willCollideOnRotation(this, nextPattern)) {
+    if (isNearRightWall(this)) {
+      kick = -1; // Mover para esquerda
     } else {
-      // it's the left wall
-      kick = 1; // we need to move the piece to the right
+      kick = 1; // Mover para direita
     }
   }
 
-  if (!this.collision(kick, 0, nextPattern)) {
+  if (canRotate(this, kick, nextPattern)) {
     this.unDraw();
     this.x += kick;
-    this.tetrominoN = (this.tetrominoN + 1) % this.tetromino.length; // (0+1)%4 => 1
+    this.tetrominoN = (this.tetrominoN + 1) % this.tetromino.length;
     this.activeTetromino = this.tetromino[this.tetrominoN];
     this.draw();
-    if (this.tetromino.length > 1 && !isMuted) {
+
+    if (shouldPlayRotateSound(this)) {
       rotateAudio.currentTime = 0;
       rotateAudio.play().catch((e) => console.warn("Audio bloqueado:", e));
     }
@@ -538,51 +563,72 @@ Piece.prototype.rotate = function () {
 
 let score = 0;
 
-Piece.prototype.lock = function () {
-  let lineClearedThisTurn = false; // flag para tocar áudio apenas uma vez
+// #Extract Method + Introduce Explaining Variable
 
+// Verifica se uma linha está completamente preenchida
+function isRowComplete(rowIndex) {
+  for (let col = 0; col < COL; col++) {
+    if (board[rowIndex][col] === "VACANT") {
+      return false;
+    }
+  }
+  return true;
+}
+
+//  Move todas as linhas acima de uma posição para baixo
+function moveRowsDown(rowIndex) {
+  for (let row = rowIndex; row > 1; row--) {
+    for (let col = 0; col < COL; col++) {
+      board[row][col] = board[row - 1][col];
+    }
+  }
+  // Limpar linha superior
+  for (let col = 0; col < COL; col++) {
+    board[0][col] = "VACANT";
+  }
+}
+
+//  Remove linhas completas e atualiza pontuação
+function clearCompletedRows() {
+  let clearedCount = 0;
+
+  for (let row = 0; row < ROW; row++) {
+    if (isRowComplete(row)) {
+      moveRowsDown(row);
+      score += 10;
+      linesCleared++;
+      clearedCount++;
+    }
+  }
+
+  return clearedCount;
+}
+
+Piece.prototype.lock = function () {
+  // Travar peça no tabuleiro
   for (r = 0; r < this.activeTetromino.length; r++) {
     for (c = 0; c < this.activeTetromino.length; c++) {
       if (!this.activeTetromino[r][c]) continue;
 
-      if (this.y + r < 0) {
+      const pieceRow = this.y + r;
+      const pieceCol = this.x + c;
+
+      // Game Over: peça está acima do tabuleiro visível
+      if (pieceRow < 0) {
         gameOver = true;
         showGameOverModal();
         break;
       }
 
-      board[this.y + r][this.x + c] = this.color;
+      board[pieceRow][pieceCol] = this.color;
     }
   }
 
-  // remove full rows
-  for (r = 0; r < ROW; r++) {
-    let isRowFull = true;
-    for (c = 0; c < COL; c++) {
-      isRowFull = isRowFull && board[r][c] != "VACANT";
-    }
-    if (isRowFull) {
-      lineClearedThisTurn = true; // marca que pelo menos uma linha foi limpa
+  // Limpar linhas completas
+  const rowsCleared = clearCompletedRows();
 
-      // move todas as linhas acima para baixo
-      for (y = r; y > 1; y--) {
-        for (c = 0; c < COL; c++) {
-          board[y][c] = board[y - 1][c];
-        }
-      }
-
-      // limpar top row
-      for (c = 0; c < COL; c++) {
-        board[0][c] = "VACANT";
-      }
-
-      score += 10;
-      linesCleared++;
-    }
-  }
-
-  // toca áudio apenas uma vez se alguma linha foi limpa
-  if (lineClearedThisTurn && !isMuted) {
+  // Tocar áudio se alguma linha foi limpa
+  if (rowsCleared > 0 && !isMuted) {
     stageClearAudio.currentTime = 0;
     stageClearAudio.play().catch((e) => console.warn("Audio bloqueado:", e));
   }
@@ -640,34 +686,37 @@ window.addEventListener("focus", function () {
   isWindowBlurred = false;
 });
 
+// #Consolidate Conditional Expression
+function isGamePaused() {
+  return isPaused || isAutoPaused;
+}
+
+// Despausar o jogo e retomar estado normal
+function resumeGame() {
+  isPaused = false;
+  isAutoPaused = false;
+  hidePauseModal();
+  drawBoard();
+  p.draw();
+  playMusic();
+}
+
+//  Pausar o jogo manualmente
+function pauseGame() {
+  isPaused = true;
+  showPauseModal();
+  pauseMusic();
+}
+
 function CONTROL(event) {
   // Tecla P - Pausar/Despausar o jogo
   if (event.keyCode === KEY_CODES.PAUSE) {
-    if (isPaused && !gameOver) {
-      // Despausar jogo (pausa manual)
-      isPaused = false;
-      hidePauseModal();
-      drawBoard();
-      p.draw();
-
-      // Retomar música
-      playMusic();
-    } else if (isAutoPaused && !gameOver) {
-      // Retomar após pausa automática
-      isAutoPaused = false;
-      hidePauseModal();
-      drawBoard();
-      p.draw();
-
-      // Retomar música
-      playMusic();
-    } else if (!isPaused && !isAutoPaused && !gameOver) {
-      // Pausar manualmente
-      isPaused = true;
-      showPauseModal();
-      pauseMusic();
+    if (isGamePaused() && !gameOver) {
+      resumeGame();
+    } else if (!gameOver) {
+      pauseGame();
     }
-    return; // Não executa outros controles quando pausando/despausando
+    return;
   }
 
   // Tecla R - Reiniciar jogo
@@ -690,7 +739,7 @@ function CONTROL(event) {
   }
 
   // Só permite outros controles se o jogo não estiver pausado
-  if (isPaused || isAutoPaused || gameOver) {
+  if (isGamePaused() || gameOver) {
     return;
   }
 
@@ -732,14 +781,14 @@ function drop() {
   let now = Date.now();
   let delta = now - dropStart;
 
-  // Só move a peça se o jogo não estiver pausado (manual ou automaticamente)
-  if (!isPaused && !isAutoPaused && delta > GAME_SPEED.INITIAL_DROP_INTERVAL) {
+  // Só move a peça se o jogo não estiver pausado
+  if (!isGamePaused() && delta > GAME_SPEED.INITIAL_DROP_INTERVAL) {
     p.moveDown();
     dropStart = Date.now();
   }
 
   // Se o jogo estiver pausado, resetar o contador para evitar queda rápida ao despausar
-  if (isPaused || (isAutoPaused && !gameOver)) {
+  if (isGamePaused() && !gameOver) {
     dropStart = Date.now();
     // Mostrar modal de pausa
     showPauseModal();
