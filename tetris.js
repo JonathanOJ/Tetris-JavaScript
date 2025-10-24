@@ -118,11 +118,7 @@ function pauseMusic() {
   backgroundMusic.pause();
 }
 
-const audios = [
-  backgroundMusic,
-  stageClearAudio,
-  rotateAudio
-];
+const audios = [backgroundMusic, stageClearAudio, rotateAudio];
 
 // Tocar música na primeira interação do usuário (tecla ou botão)
 function startMusicOnInteraction() {
@@ -198,55 +194,52 @@ function drawBoard() {
 
 // controlar modal de pausa
 function showPauseModal() {
-  const modal = document.getElementById("pauseModal");
-  const title = document.getElementById("pauseTitle");
-  const message = document.getElementById("pauseMessage");
+  const elements = getElements([
+    "pauseTitle",
+    "pauseMessage",
+    "pauseModalContent",
+  ]);
 
   if (isAutoPaused) {
-    title.textContent = "⏸️ PAUSADO";
-    message.innerHTML = `
+    elements.pauseTitle.textContent = "⏸️ PAUSADO";
+    elements.pauseMessage.innerHTML = `
       Janela perdeu foco<br>Pressione <span class="pause-key">P</span> para retomar<br><br>
       Pressione <span class="pause-key">R</span> para reiniciar
-      `;
+    `;
   } else if (isPaused) {
-    title.textContent = "⏸️ PAUSADO";
-    message.innerHTML =
-      message.innerHTML = `
-        Pressione <span class="pause-key">P</span> para continuar<br><br>
-        Pressione <span class="pause-key">R</span> para reiniciar
-`;  }
-
-  // Aplicar cores do tema atual
-  const pauseModalContent = document.getElementById("pauseModalContent");
-  const pauseKeys = document.querySelectorAll(".pause-key");
-
-  if (pauseModalContent) {
-    pauseModalContent.style.borderColor = currentTheme.ui.accent;
-    pauseModalContent.style.boxShadow = `0 0 20px ${currentTheme.ui.accent}50`;
+    elements.pauseTitle.textContent = "⏸️ PAUSADO";
+    elements.pauseMessage.innerHTML = `
+      Pressione <span class="pause-key">P</span> para continuar<br><br>
+      Pressione <span class="pause-key">R</span> para reiniciar
+    `;
   }
 
-  if (title) {
-    title.style.color = currentTheme.ui.accent;
+  // Aplicar cores do tema atual
+  const pauseKeys = document.querySelectorAll(".pause-key");
+
+  if (elements.pauseModalContent) {
+    elements.pauseModalContent.style.borderColor = currentTheme.ui.accent;
+    elements.pauseModalContent.style.boxShadow = `0 0 20px ${currentTheme.ui.accent}50`;
+  }
+
+  if (elements.pauseTitle) {
+    elements.pauseTitle.style.color = currentTheme.ui.accent;
   }
 
   pauseKeys.forEach((key) => {
     key.style.backgroundColor = currentTheme.ui.accent;
   });
 
-  modal.style.display = "block";
+  showModal("pauseModal");
 }
 
 function hidePauseModal() {
-  const modal = document.getElementById("pauseModal");
-  modal.style.display = "none";
+  hideModal("pauseModal");
 }
 
 // controlar modal de game over
 function showGameOverModal() {
-  const modal = document.getElementById("gameOverModal");
-  const finalScoreElement = document.getElementById("finalScore");
-  const linesClearedElement = document.getElementById("linesCleared");
-  const gameTimeElement = document.getElementById("gameTime");
+  const elements = getElements(["finalScore", "linesCleared", "gameTime"]);
 
   // Calcular tempo de jogo
   const gameEndTime = Date.now();
@@ -256,11 +249,11 @@ function showGameOverModal() {
   const timeString = `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
   // Atualizar elementos
-  finalScoreElement.textContent = score;
-  linesClearedElement.textContent = linesCleared;
-  gameTimeElement.textContent = timeString;
+  elements.finalScore.textContent = score;
+  elements.linesCleared.textContent = linesCleared;
+  elements.gameTime.textContent = timeString;
 
-  modal.style.display = "block";
+  showModal("gameOverModal");
 
   if (!isMuted) {
     const gameOverMusic = new Audio("sounds/game_over.mp3");
@@ -271,11 +264,39 @@ function showGameOverModal() {
 }
 
 function hideGameOverModal() {
-  const modal = document.getElementById("gameOverModal");
-  modal.style.display = "none";
+  hideModal("gameOverModal");
 }
 
 drawBoard();
+
+// ==========================================
+// FUNÇÕES UTILITÁRIAS PARA MANIPULAÇÃO DE MODAIS
+// ==========================================
+
+function showModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.style.display = "block";
+  }
+}
+
+function hideModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.style.display = "none";
+  }
+}
+
+function getElements(elementIds) {
+  const elements = {};
+  elementIds.forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      elements[id] = element;
+    }
+  });
+  return elements;
+}
 
 // Função para aplicar cores da interface
 function applyUITheme() {
@@ -629,7 +650,6 @@ function CONTROL(event) {
     return;
   }
 
-
   // Tecla T (keyCode 84) - Alternar tema visual
   if (event.keyCode == 84) {
     switchTheme();
@@ -674,7 +694,6 @@ function updateDropInterval() {
   dropInterval = Math.max(200, 1000 - Math.floor(score / 50) * 50);
 }
 
-
 function drop() {
   let now = Date.now();
   let delta = now - dropStart;
@@ -686,7 +705,7 @@ function drop() {
   }
 
   // Se o jogo estiver pausado, resetar o contador para evitar queda rápida ao despausar
-  if (isPaused || isAutoPaused && !gameOver) {
+  if (isPaused || (isAutoPaused && !gameOver)) {
     dropStart = Date.now();
     // Mostrar modal de pausa
     showPauseModal();
