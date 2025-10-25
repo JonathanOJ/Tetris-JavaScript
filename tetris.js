@@ -21,6 +21,7 @@ const KEY_CODES = {
   RESTART: 82, // Tecla R
   THEME: 84, // Tecla T
   MUTE: 77, // Tecla M
+  HELP: 72, // Tecla H
 };
 
 // ==========================================
@@ -145,7 +146,7 @@ function pauseMusic() {
   backgroundMusic.pause();
 }
 
-const audios = [backgroundMusic, stageClearAudio, rotateAudio];
+const audios = [backgroundMusic, stageClearAudio, rotateAudio, collisionAudio];
 
 // Tocar música na primeira interação do usuário (tecla ou botão)
 function startMusicOnInteraction() {
@@ -297,6 +298,29 @@ function hideGameOverModal() {
   hideModal("gameOverModal");
 }
 
+// controlar modal de controles
+function showControlsModal() {
+  const controlsModalContent = document.getElementById("controlsModalContent");
+  
+  // Aplicar cores do tema atual
+  if (controlsModalContent) {
+    controlsModalContent.style.borderColor = currentTheme.ui.accent;
+    controlsModalContent.style.boxShadow = `0 0 25px ${currentTheme.ui.accent}50`;
+  }
+
+  // Aplicar tema nas teclas de controle
+  const controlKeys = document.querySelectorAll(".control-key");
+  controlKeys.forEach((key) => {
+    key.style.background = `linear-gradient(135deg, ${currentTheme.ui.accent}, ${currentTheme.ui.accent}cc)`;
+  });
+
+  showModal("controlsModal");
+}
+
+function hideControlsModal() {
+  hideModal("controlsModal");
+}
+
 drawBoard();
 
 // ==========================================
@@ -334,6 +358,7 @@ function applyUITheme() {
   const scoreElement = document.getElementById("score");
   const allDivs = document.querySelectorAll("div");
   const allLinks = document.querySelectorAll("a");
+  const controlsHelpBtn = document.querySelector(".controls-help-btn");
 
   // Aplicar cor de fundo
   body.style.backgroundColor = currentTheme.ui.background;
@@ -355,6 +380,12 @@ function applyUITheme() {
   allLinks.forEach((link) => {
     link.style.color = currentTheme.ui.accent;
   });
+
+  // Aplicar tema no botão de controles
+  if (controlsHelpBtn) {
+    controlsHelpBtn.style.background = `linear-gradient(135deg, ${currentTheme.ui.accent}, ${currentTheme.ui.accent}cc)`;
+    controlsHelpBtn.style.boxShadow = `0 2px 8px ${currentTheme.ui.accent}50`;
+  }
 }
 
 // Função para alternar tema
@@ -554,7 +585,7 @@ Piece.prototype.rotate = function () {
     this.activeTetromino = this.tetromino[this.tetrominoN];
     this.draw();
 
-    if (shouldPlayRotateSound(this)) {
+    if (shouldPlayRotateSound(this) && !isMuted) {
       rotateAudio.currentTime = 0;
       rotateAudio.play().catch((e) => console.warn("Audio bloqueado:", e));
     }
@@ -735,6 +766,17 @@ function CONTROL(event) {
   // Tecla M - mute/unmute
   if (event.keyCode === KEY_CODES.MUTE) {
     toggleMute();
+    return;
+  }
+
+  // Tecla H - Mostrar/Esconder controles
+  if (event.keyCode === KEY_CODES.HELP) {
+    const controlsModal = document.getElementById("controlsModal");
+    if (controlsModal.style.display === "block") {
+      hideControlsModal();
+    } else {
+      showControlsModal();
+    }
     return;
   }
 
