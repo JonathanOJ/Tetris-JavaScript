@@ -474,7 +474,7 @@ Piece.prototype.unDraw = function () {
 
 // move Down the piece
 
-Piece.prototype.moveDown = function () {
+Piece.prototype.moveDown = async function () {
   if (!this.collision(0, 1, this.activeTetromino)) {
     this.unDraw();
     this.y++;
@@ -487,7 +487,7 @@ Piece.prototype.moveDown = function () {
     }
 
     // travar peça e gerar nova
-    this.lock();
+    await this.lock();
     p = randomPiece();
   }
 };
@@ -562,6 +562,115 @@ Piece.prototype.rotate = function () {
 };
 
 let score = 0;
+let isLineClearing = false; // controla se está executando animação de limpeza
+
+// ==========================================
+// SISTEMA DE ANIMAÇÃO DE LIMPEZA DE LINHAS
+// ==========================================
+
+// Configurações da animação
+const ANIMATION_CONFIG = {
+  FLASH_DURATION: 300, // duração do flash em ms
+  FLASH_COUNT: 3, // número de piscadas
+  FADE_DURATION: 200, // duração do fade out em ms
+  CLEAR_DELAY: 100 // delay antes de mover linhas para baixo
+};
+
+// Função para desenhar linha com efeito especial
+function drawLineWithEffect(row, alpha = 1, effectColor = null) {
+  for (let col = 0; col < COL; col++) {
+    const color = effectColor || board[row][col];
+    
+    ctx.globalAlpha = alpha;
+    
+    // Se effectColor for especificado, usar cor destacada baseada no tema atual
+    if (effectColor === '#FFFFFF') {
+      // Usar cor de destaque do tema atual para o flash
+      const flashColor = currentTheme.ui.accent;
+      ctx.fillStyle = flashColor;
+      ctx.fillRect(col * SQ, row * SQ, SQ, SQ);
+      ctx.strokeStyle = currentTheme.stroke;
+      ctx.strokeRect(col * SQ, row * SQ, SQ, SQ);
+    } else {
+      drawSquare(col, row, color);
+    }
+    
+    ctx.globalAlpha = 1;
+  }
+}
+
+// Função para criar efeito de flash na linha
+function flashLine(row, flashCount = ANIMATION_CONFIG.FLASH_COUNT) {
+  return new Promise(resolve => {
+    let currentFlash = 0;
+    const flashInterval = ANIMATION_CONFIG.FLASH_DURATION / (flashCount * 2);
+    
+    const flash = () => {
+      if (currentFlash >= flashCount * 2) {
+        resolve();
+        return;
+      }
+      
+      // Alternar entre cor destacada e normal
+      const isHighlighted = currentFlash % 2 === 0;
+      const effectColor = isHighlighted ? '#FFFFFF' : null;
+      
+      // Redesenhar apenas a linha específica
+      drawLineWithEffect(row, 1, effectColor);
+      
+      currentFlash++;
+      setTimeout(flash, flashInterval);
+    };
+    
+    flash();
+  });
+}
+
+// Função para criar efeito de fade out na linha
+function fadeOutLine(row) {
+  return new Promise(resolve => {
+    const fadeSteps = 10;
+    const fadeInterval = ANIMATION_CONFIG.FADE_DURATION / fadeSteps;
+    let currentStep = 0;
+    
+    const fade = () => {
+      if (currentStep >= fadeSteps) {
+        resolve();
+        return;
+      }
+      
+      const alpha = 1 - (currentStep / fadeSteps);
+      
+      // Redesenhar linha com transparência
+      drawLineWithEffect(row, alpha);
+      
+      currentStep++;
+      setTimeout(fade, fadeInterval);
+    };
+    
+    fade();
+  });
+}
+
+// Função principal para animar limpeza de linhas
+async function animateLineClearing(completedRows) {
+  if (completedRows.length === 0) return;
+  
+  isLineClearing = true;
+  
+  // Fase 1: Flash em todas as linhas simultaneamente
+  const flashPromises = completedRows.map(row => flashLine(row));
+  await Promise.all(flashPromises);
+  
+  // Fase 2: Fade out em todas as linhas
+  const fadePromises = completedRows.map(row => fadeOutLine(row));
+  await Promise.all(fadePromises);
+  
+  // Pequeno delay antes de mover as linhas
+  await new Promise(resolve => setTimeout(resolve, ANIMATION_CONFIG.CLEAR_DELAY));
+  
+  isLineClearing = false;
+}
 
 // #Extract Method + Introduce Explaining Variable
 
@@ -588,23 +697,47 @@ function moveRowsDown(rowIndex) {
   }
 }
 
-//  Remove linhas completas e atualiza pontuação
-function clearCompletedRows() {
-  let clearedCount = 0;
-
+// Identifica quais linhas estão completas
+function getCompletedRows() {
+  const completedRows = [];
   for (let row = 0; row < ROW; row++) {
     if (isRowComplete(row)) {
-      moveRowsDown(row);
-      score += 10;
-      linesCleared++;
-      clearedCount++;
+      completedRows.push(row);
     }
   }
-
-  return clearedCount;
+  return completedRows;
 }
 
-Piece.prototype.lock = function () {
+// Remove linhas específicas e move as superiores para baixo
+function removeRows(rowsToRemove) {
+  // Ordenar em ordem decrescente para remover de baixo para cima
+  rowsToRemove.sort((a, b) => b - a);
+  
+  rowsToRemove.forEach(rowIndex => {
+    moveRowsDown(rowIndex);
+    score += 10;
+    linesCleared++;
+  });
+}
+
+// Remove linhas completas e atualiza pontuação (versão assíncrona)
+async function clearCompletedRows() {
+  const completedRows = getCompletedRows();
+  
+  if (completedRows.length === 0) {
+    return 0;
+  }
+  
+  // Executar animação se linhas foram encontradas
+  await animateLineClearing(completedRows);
+  
+  // Remover as linhas após a animação
+  removeRows(completedRows);
+  
+  return completedRows.length;
+}
+
+Piece.prototype.lock = async function () {
   // Travar peça no tabuleiro
   for (r = 0; r < this.activeTetromino.length; r++) {
     for (c = 0; c < this.activeTetromino.length; c++) {
@@ -624,8 +757,8 @@ Piece.prototype.lock = function () {
     }
   }
 
-  // Limpar linhas completas
-  const rowsCleared = clearCompletedRows();
+  // Limpar linhas completas com animação
+  const rowsCleared = await clearCompletedRows();
 
   // Tocar áudio se alguma linha foi limpa
   if (rowsCleared > 0 && !isMuted) {
@@ -738,8 +871,8 @@ function CONTROL(event) {
     return;
   }
 
-  // Só permite outros controles se o jogo não estiver pausado
-  if (isGamePaused() || gameOver) {
+  // Só permite outros controles se o jogo não estiver pausado ou limpando linhas
+  if (isGamePaused() || gameOver || isLineClearing) {
     return;
   }
 
@@ -781,8 +914,8 @@ function drop() {
   let now = Date.now();
   let delta = now - dropStart;
 
-  // Só move a peça se o jogo não estiver pausado
-  if (!isGamePaused() && delta > GAME_SPEED.INITIAL_DROP_INTERVAL) {
+  // Só move a peça se o jogo não estiver pausado e não estiver limpando linhas
+  if (!isGamePaused() && !isLineClearing && delta > GAME_SPEED.INITIAL_DROP_INTERVAL) {
     p.moveDown();
     dropStart = Date.now();
   }
@@ -811,6 +944,7 @@ function restartGame() {
   isPaused = false;
   isAutoPaused = false;
   isWindowBlurred = false;
+  isLineClearing = false;
   score = 0;
   linesCleared = 0;
   dropStart = Date.now();
