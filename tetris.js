@@ -912,7 +912,6 @@ function CONTROL(event) {
     }
     return;
   }
-
   // Só permite outros controles se o jogo não estiver pausado ou limpando linhas
   if (isGamePaused() || gameOver || isLineClearing) {
     return;
