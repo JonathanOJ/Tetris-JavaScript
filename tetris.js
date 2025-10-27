@@ -34,6 +34,21 @@ const GAME_SPEED = {
   SPEED_INCREASE_AMOUNT: 50, // Reduz 50ms a cada threshold
 };
 
+// ==========================================
+// CONSTANTES PARA SUBSTITUIR NÚMEROS MÁGICOS
+// ==========================================
+const GAME_CONSTANTS = {
+  POINTS_PER_LINE: 10,
+  INITIAL_PIECE_X: 3,
+  INITIAL_PIECE_Y: -2,
+  BOARD_LIMIT_TOP: 0,
+  BOARD_LIMIT_BOTTOM: 1,
+  FADE_STEPS: 10,
+  THEME_NOTIFICATION_TIMEOUT: 2500,
+  AUDIO_VOLUME_BACKGROUND: 0.4,
+  AUDIO_VOLUME_EFFECTS: 0.6
+};
+
 // SISTEMA DE TEMAS VISUAIS - Definir antes de usar
 const THEMES = {
   classic: {
@@ -123,16 +138,16 @@ let isMuted = false;
 // Música de fundo
 const backgroundMusic = new Audio("sounds/music.mp3");
 backgroundMusic.loop = true;
-backgroundMusic.volume = 0.4;
+backgroundMusic.volume = GAME_CONSTANTS.AUDIO_VOLUME_BACKGROUND;
 
 const stageClearAudio = new Audio("sounds/stage_clear.mp3");
-stageClearAudio.volume = 0.6;
+stageClearAudio.volume = GAME_CONSTANTS.AUDIO_VOLUME_EFFECTS;
 
 const rotateAudio = new Audio("sounds/rotate.mp3");
-rotateAudio.volume = 0.6;
+rotateAudio.volume = GAME_CONSTANTS.AUDIO_VOLUME_EFFECTS;
 
 const collisionAudio = new Audio("sounds/collision.mp3");
-collisionAudio.volume = 0.6;
+collisionAudio.volume = GAME_CONSTANTS.AUDIO_VOLUME_EFFECTS;
 
 // Função para tocar música de fundo
 function playMusic() {
@@ -147,6 +162,16 @@ function pauseMusic() {
 }
 
 const audios = [backgroundMusic, stageClearAudio, rotateAudio, collisionAudio];
+
+// Consolidate Duplicate Conditional Fragments - função para tocar áudios com reset
+function playAudioEffect(audio, shouldWarnOnError = true) {
+  audio.currentTime = 0;
+  if (shouldWarnOnError) {
+    audio.play().catch((e) => console.warn("Audio bloqueado:", e));
+  } else {
+    audio.play();
+  }
+}
 
 // Tocar música na primeira interação do usuário (tecla ou botão)
 function startMusicOnInteraction() {
@@ -228,14 +253,15 @@ function showPauseModal() {
     "pauseModalContent",
   ]);
 
-  if (isAutoPaused) {
-    elements.pauseTitle.textContent = "⏸️ PAUSADO";
+  // Consolidate Duplicate Conditional Fragments - título comum
+  elements.pauseTitle.textContent = "⏸️ PAUSADO";
+  
+  if (gameState.isAutoPaused) {
     elements.pauseMessage.innerHTML = `
       Janela perdeu foco<br>Pressione <span class="pause-key">P</span> para retomar<br><br>
       Pressione <span class="pause-key">R</span> para reiniciar
     `;
-  } else if (isPaused) {
-    elements.pauseTitle.textContent = "⏸️ PAUSADO";
+  } else if (gameState.isPaused) {
     elements.pauseMessage.innerHTML = `
       Pressione <span class="pause-key">P</span> para continuar<br><br>
       Pressione <span class="pause-key">R</span> para reiniciar
@@ -281,14 +307,14 @@ function showGameOverModal() {
 
   // Atualizar elementos
   elements.finalScore.textContent = score;
-  elements.linesCleared.textContent = linesCleared;
-  elements.gameTime.textContent = calculateGameTime(gameStartTime);
+  elements.linesCleared.textContent = gameState.linesCleared;
+  elements.gameTime.textContent = calculateGameTime(gameState.gameStartTime);
 
   showModal("gameOverModal");
 
   if (!isMuted) {
     const gameOverMusic = new Audio("sounds/game_over.mp3");
-    gameOverMusic.volume = 0.6;
+    gameOverMusic.volume = GAME_CONSTANTS.AUDIO_VOLUME_EFFECTS;
     pauseMusic();
     gameOverMusic.play().catch((e) => console.warn("Audio bloqueado:", e));
   }
@@ -398,7 +424,7 @@ function switchTheme() {
 
   // Redesenhar tudo com novo tema
   drawBoard();
-  if (!gameOver && p) {
+  if (!gameState.gameOver && p) {
     p.draw();
   }
 
@@ -441,7 +467,7 @@ function showThemeNotification() {
   // Esconder após 2 segundos
   setTimeout(() => {
     notification.style.opacity = "0";
-  }, 2500);
+  }, GAME_CONSTANTS.THEME_NOTIFICATION_TIMEOUT);
 }
 
 // the pieces and their colors (agora usando tema dinâmico)
@@ -474,8 +500,8 @@ function Piece(tetromino, color) {
   this.activeTetromino = this.tetromino[this.tetrominoN];
 
   // we need to control the pieces
-  this.x = 3;
-  this.y = -2;
+  this.x = GAME_CONSTANTS.INITIAL_PIECE_X;
+  this.y = GAME_CONSTANTS.INITIAL_PIECE_Y;
 }
 
 // fill function
@@ -513,8 +539,7 @@ Piece.prototype.moveDown = async function () {
   } else {
     // toca som de colisão se não estiver mutado
     if (!isMuted) {
-      collisionAudio.currentTime = 0;
-      collisionAudio.play().catch((e) => console.warn("Audio bloqueado:", e));
+      playAudioEffect(collisionAudio);
     }
 
     // travar peça e gerar nova
@@ -586,8 +611,7 @@ Piece.prototype.rotate = function () {
     this.draw();
 
     if (shouldPlayRotateSound(this) && !isMuted) {
-      rotateAudio.currentTime = 0;
-      rotateAudio.play().catch((e) => console.warn("Audio bloqueado:", e));
+      playAudioEffect(rotateAudio);
     }
   }
 };
@@ -660,7 +684,7 @@ function flashLine(row, flashCount = ANIMATION_CONFIG.FLASH_COUNT) {
 // Função para criar efeito de fade out na linha
 function fadeOutLine(row) {
   return new Promise(resolve => {
-    const fadeSteps = 10;
+    const fadeSteps = GAME_CONSTANTS.FADE_STEPS;
     const fadeInterval = ANIMATION_CONFIG.FADE_DURATION / fadeSteps;
     let currentStep = 0;
     
@@ -717,14 +741,14 @@ function isRowComplete(rowIndex) {
 
 //  Move todas as linhas acima de uma posição para baixo
 function moveRowsDown(rowIndex) {
-  for (let row = rowIndex; row > 1; row--) {
+  for (let row = rowIndex; row > GAME_CONSTANTS.BOARD_LIMIT_BOTTOM; row--) {
     for (let col = 0; col < COL; col++) {
       board[row][col] = board[row - 1][col];
     }
   }
   // Limpar linha superior
   for (let col = 0; col < COL; col++) {
-    board[0][col] = "VACANT";
+    board[GAME_CONSTANTS.BOARD_LIMIT_TOP][col] = "VACANT";
   }
 }
 
@@ -746,8 +770,8 @@ function removeRows(rowsToRemove) {
   
   rowsToRemove.forEach(rowIndex => {
     moveRowsDown(rowIndex);
-    score += 10;
-    linesCleared++;
+    score += GAME_CONSTANTS.POINTS_PER_LINE;
+    gameState.linesCleared++;
   });
 }
 
@@ -779,7 +803,7 @@ Piece.prototype.lock = async function () {
 
       // Game Over: peça está acima do tabuleiro visível
       if (pieceRow < 0) {
-        gameOver = true;
+        gameState.gameOver = true;
         showGameOverModal();
         break;
       }
@@ -793,8 +817,7 @@ Piece.prototype.lock = async function () {
 
   // Tocar áudio se alguma linha foi limpa
   if (rowsCleared > 0 && !isMuted) {
-    stageClearAudio.currentTime = 0;
-    stageClearAudio.play().catch((e) => console.warn("Audio bloqueado:", e));
+    playAudioEffect(stageClearAudio);
   }
 
   drawBoard();
@@ -838,27 +861,27 @@ document.addEventListener("keydown", CONTROL);
 // SISTEMA DE PAUSA AUTOMÁTICA - Detectar perda/retorno de foco da janela
 window.addEventListener("blur", function () {
   // Janela perdeu foco - ativar pausa automática
-  if (!gameOver && !isPaused) {
-    isWindowBlurred = true;
-    isAutoPaused = true;
+  if (!gameState.gameOver && !gameState.isPaused) {
+    gameState.isWindowBlurred = true;
+    gameState.isAutoPaused = true;
   }
 });
 
 window.addEventListener("focus", function () {
   // Janela recuperou foco - marcar que não está mais desfocada
   // mas manter pausado até o jogador pressionar P manualmente
-  isWindowBlurred = false;
+  gameState.isWindowBlurred = false;
 });
 
 // #Consolidate Conditional Expression
 function isGamePaused() {
-  return isPaused || isAutoPaused;
+  return gameState.isPaused || gameState.isAutoPaused;
 }
 
 // Despausar o jogo e retomar estado normal
 function resumeGame() {
-  isPaused = false;
-  isAutoPaused = false;
+  gameState.isPaused = false;
+  gameState.isAutoPaused = false;
   hidePauseModal();
   drawBoard();
   p.draw();
@@ -867,26 +890,56 @@ function resumeGame() {
 
 //  Pausar o jogo manualmente
 function pauseGame() {
-  isPaused = true;
+  gameState.isPaused = true;
   showPauseModal();
   pauseMusic();
+}
+
+function handlePauseControl() {
+  if (isGamePaused() && !gameState.gameOver) {
+    resumeGame();
+  } else if (!gameState.gameOver) {
+    pauseGame();
+  }
+}
+
+function handleRestartControl() {
+  hidePauseModal();
+  restartGame();
+}
+
+function handleHelpControl() {
+  const controlsModal = document.getElementById("controlsModal");
+  if (controlsModal.style.display === "block") {
+    hideControlsModal();
+  } else {
+    showControlsModal();
+  }
+}
+
+function handleMovementControls(keyCode) {
+  if (keyCode === KEY_CODES.ARROW_LEFT) {
+    p.moveLeft();
+  } else if (keyCode === KEY_CODES.ARROW_UP) {
+    p.rotate();
+  } else if (keyCode === KEY_CODES.ARROW_RIGHT) {
+    p.moveRight();
+  } else if (keyCode === KEY_CODES.ARROW_DOWN) {
+    p.moveDown();
+    gameState.dropStart = Date.now();
+  }
 }
 
 function CONTROL(event) {
   // Tecla P - Pausar/Despausar o jogo
   if (event.keyCode === KEY_CODES.PAUSE) {
-    if (isGamePaused() && !gameOver) {
-      resumeGame();
-    } else if (!gameOver) {
-      pauseGame();
-    }
+    handlePauseControl();
     return;
   }
 
   // Tecla R - Reiniciar jogo
   if (event.keyCode === KEY_CODES.RESTART) {
-    hidePauseModal();
-    restartGame();
+    handleRestartControl();
     return;
   }
 
@@ -904,48 +957,38 @@ function CONTROL(event) {
 
   // Tecla H - Mostrar/Esconder controles
   if (event.keyCode === KEY_CODES.HELP) {
-    const controlsModal = document.getElementById("controlsModal");
-    if (controlsModal.style.display === "block") {
-      hideControlsModal();
-    } else {
-      showControlsModal();
-    }
+    handleHelpControl();
     return;
   }
+  
   // Só permite outros controles se o jogo não estiver pausado ou limpando linhas
-  if (isGamePaused() || gameOver || isLineClearing) {
+  if (isGamePaused() || gameState.gameOver || isLineClearing) {
     return;
   }
 
   // Controles de movimento
-  if (event.keyCode === KEY_CODES.ARROW_LEFT) {
-    p.moveLeft();
-  } else if (event.keyCode === KEY_CODES.ARROW_UP) {
-    p.rotate();
-  } else if (event.keyCode === KEY_CODES.ARROW_RIGHT) {
-    p.moveRight();
-  } else if (event.keyCode === KEY_CODES.ARROW_DOWN) {
-    p.moveDown();
-    dropStart = Date.now();
-  }
+  handleMovementControls(event.keyCode);
 }
 
 // drop the piece every 1sec
 
-let dropStart = Date.now();
-let gameStartTime = Date.now(); // tempo de início do jogo
-let dropInterval = GAME_SPEED.INITIAL_DROP_INTERVAL;
-let gameOver = false;
-let isPaused = false; // controla pausa manual
-let isWindowBlurred = false; // controla se janela perdeu foco
-let isAutoPaused = false; // controla se está pausado automaticamente
-let linesCleared = 0; // contador de linhas limpas
+// Game State Parameter Object
+const gameState = {
+  dropStart: Date.now(),
+  gameStartTime: Date.now(),
+  dropInterval: GAME_SPEED.INITIAL_DROP_INTERVAL,
+  gameOver: false,
+  isPaused: false,
+  isWindowBlurred: false,
+  isAutoPaused: false,
+  linesCleared: 0
+};
 
 function updateDropInterval() {
   const speedReduction =
     Math.floor(score / GAME_SPEED.SPEED_INCREASE_THRESHOLD) *
     GAME_SPEED.SPEED_INCREASE_AMOUNT;
-  dropInterval = Math.max(
+  gameState.dropInterval = Math.max(
     GAME_SPEED.MIN_DROP_INTERVAL,
     GAME_SPEED.INITIAL_DROP_INTERVAL - speedReduction
   );
@@ -953,23 +996,23 @@ function updateDropInterval() {
 
 function drop() {
   let now = Date.now();
-  let delta = now - dropStart;
+  let delta = now - gameState.dropStart;
 
   // Só move a peça se o jogo não estiver pausado e não estiver limpando linhas
   if (!isGamePaused() && !isLineClearing && delta > GAME_SPEED.INITIAL_DROP_INTERVAL) {
     p.moveDown();
-    dropStart = Date.now();
+    gameState.dropStart = Date.now();
   }
 
   // Se o jogo estiver pausado, resetar o contador para evitar queda rápida ao despausar
-  if (isGamePaused() && !gameOver) {
-    dropStart = Date.now();
+  if (isGamePaused() && !gameState.gameOver) {
+    gameState.dropStart = Date.now();
     // Mostrar modal de pausa
     showPauseModal();
     if (!backgroundMusic.paused) backgroundMusic.pause();
   }
 
-  if (!gameOver) {
+  if (!gameState.gameOver) {
     requestAnimationFrame(drop);
   }
 }
@@ -981,15 +1024,15 @@ drop();
 // função para reiniciar o jogo
 function restartGame() {
   // Resetar variáveis do jogo
-  gameOver = false;
-  isPaused = false;
-  isAutoPaused = false;
-  isWindowBlurred = false;
+  gameState.gameOver = false;
+  gameState.isPaused = false;
+  gameState.isAutoPaused = false;
+  gameState.isWindowBlurred = false;
   isLineClearing = false;
   score = 0;
-  linesCleared = 0;
-  dropStart = Date.now();
-  gameStartTime = Date.now();
+  gameState.linesCleared = 0;
+  gameState.dropStart = Date.now();
+  gameState.gameStartTime = Date.now();
 
   // Limpar o board
   for (r = 0; r < ROW; r++) {
@@ -1014,8 +1057,7 @@ function restartGame() {
   // Aplicar tema atual
   applyUITheme();
   if (!isMuted) {
-    backgroundMusic.currentTime = 0;
-    backgroundMusic.play();
+    playAudioEffect(backgroundMusic, false);
   }
   // Reiniciar o loop do jogo
   drop();
