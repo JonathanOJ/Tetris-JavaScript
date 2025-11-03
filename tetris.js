@@ -3,8 +3,8 @@ const ctx = cvs.getContext("2d");
 const scoreElement = document.getElementById("score");
 
 const ROW = 20;
-const COL = (COLUMN = 10);
-const SQ = (squareSize = 20);
+const COL = 10;
+const SQ = 20;
 
 // ==========================================
 // CONFIGURAÇÕES DE CONTROLES (KEY CODES)
@@ -229,17 +229,17 @@ function drawSquare(x, y, color) {
 // create the board
 
 let board = [];
-for (r = 0; r < ROW; r++) {
+for (let r = 0; r < ROW; r++) {
   board[r] = [];
-  for (c = 0; c < COL; c++) {
+  for (let c = 0; c < COL; c++) {
     board[r][c] = "VACANT";
   }
 }
 
 // draw the board
 function drawBoard() {
-  for (r = 0; r < ROW; r++) {
-    for (c = 0; c < COL; c++) {
+  for (let r = 0; r < ROW; r++) {
+    for (let c = 0; c < COL; c++) {
       drawSquare(c, r, board[r][c]);
     }
   }
@@ -507,8 +507,8 @@ function Piece(tetromino, color) {
 // fill function
 
 Piece.prototype.fill = function (color) {
-  for (r = 0; r < this.activeTetromino.length; r++) {
-    for (c = 0; c < this.activeTetromino.length; c++) {
+  for (let r = 0; r < this.activeTetromino.length; r++) {
+    for (let c = 0; c < this.activeTetromino.length; c++) {
       // we draw only occupied squares
       if (this.activeTetromino[r][c]) {
         drawSquare(this.x + c, this.y + r, color);
@@ -794,8 +794,8 @@ async function clearCompletedRows() {
 
 Piece.prototype.lock = async function () {
   // Travar peça no tabuleiro
-  for (r = 0; r < this.activeTetromino.length; r++) {
-    for (c = 0; c < this.activeTetromino.length; c++) {
+  for (let r = 0; r < this.activeTetromino.length; r++) {
+    for (let c = 0; c < this.activeTetromino.length; c++) {
       if (!this.activeTetromino[r][c]) continue;
 
       const pieceRow = this.y + r;
@@ -827,8 +827,8 @@ Piece.prototype.lock = async function () {
 // collision function
 
 Piece.prototype.collision = function (x, y, piece) {
-  for (r = 0; r < piece.length; r++) {
-    for (c = 0; c < piece.length; c++) {
+  for (let r = 0; r < piece.length; r++) {
+    for (let c = 0; c < piece.length; c++) {
       // if the square is empty, we skip it
       if (!piece[r][c]) {
         continue;
@@ -846,7 +846,7 @@ Piece.prototype.collision = function (x, y, piece) {
         continue;
       }
       // check if there is a locked piece alrady in place
-      if (board[newY][newX] != "VACANT") {
+      if (board[newY][newX] !== "VACANT") {
         return true;
       }
     }
@@ -1035,8 +1035,8 @@ function restartGame() {
   gameState.gameStartTime = Date.now();
 
   // Limpar o board
-  for (r = 0; r < ROW; r++) {
-    for (c = 0; c < COL; c++) {
+  for (let r = 0; r < ROW; r++) {
+    for (let c = 0; c < COL; c++) {
       board[r][c] = "VACANT";
     }
   }
