@@ -615,7 +615,6 @@ Piece.prototype.rotate = function () {
   return false;
 };
 
-let score = 0;
 let isLineClearing = false; // controla se está executando animação de limpeza
 
 // ==========================================
@@ -769,7 +768,7 @@ function removeRows(rowsToRemove) {
   
   rowsToRemove.forEach(rowIndex => {
     moveRowsDown(rowIndex);
-    score += GAME_CONSTANTS.POINTS_PER_LINE;
+    gameState.score += GAME_CONSTANTS.POINTS_PER_LINE;
     gameState.linesCleared++;
   });
 }
@@ -820,7 +819,7 @@ Piece.prototype.lock = async function () {
   }
 
   drawBoard();
-  scoreElement.innerHTML = score;
+  scoreElement.innerHTML = gameState.score;
 };
 
 // collision function
@@ -983,7 +982,8 @@ const gameState = {
   isPaused: false,
   isWindowBlurred: false,
   isAutoPaused: false,
-  linesCleared: 0
+  linesCleared: 0,
+  score: 0
 };
 
 function updateDropInterval() {
@@ -1031,7 +1031,7 @@ function restartGame() {
   gameState.isAutoPaused = false;
   gameState.isWindowBlurred = false;
   isLineClearing = false;
-  score = 0;
+  gameState.score = 0;
   gameState.linesCleared = 0;
   gameState.dropStart = Date.now();
   gameState.gameStartTime = Date.now();
