@@ -49,6 +49,14 @@ const GAME_CONSTANTS = {
   AUDIO_VOLUME_EFFECTS: 0.6
 };
 
+const gameKeyHandlers = {
+  [KEY_CODES.PAUSE]: handlePauseControl,
+  [KEY_CODES.RESTART]: handleRestartControl,
+  [KEY_CODES.THEME]: switchTheme,
+  [KEY_CODES.MUTE]: toggleMute,
+  [KEY_CODES.HELP]: handleHelpControl
+};
+
 // SISTEMA DE TEMAS VISUAIS - Definir antes de usar
 const THEMES = {
   classic: {
@@ -932,33 +940,11 @@ function handleMovementControls(keyCode) {
 }
 
 function CONTROL(event) {
-  // Tecla P - Pausar/Despausar o jogo
-  if (event.keyCode === KEY_CODES.PAUSE) {
-    handlePauseControl();
-    return;
-  }
+  const keyCode = event.keyCode;
+  const gameHandler = gameKeyHandlers[keyCode];
 
-  // Tecla R - Reiniciar jogo
-  if (event.keyCode === KEY_CODES.RESTART) {
-    handleRestartControl();
-    return;
-  }
-
-  // Tecla T - Alternar tema visual
-  if (event.keyCode === KEY_CODES.THEME) {
-    switchTheme();
-    return;
-  }
-
-  // Tecla M - mute/unmute
-  if (event.keyCode === KEY_CODES.MUTE) {
-    toggleMute();
-    return;
-  }
-
-  // Tecla H - Mostrar/Esconder controles
-  if (event.keyCode === KEY_CODES.HELP) {
-    handleHelpControl();
+  if (gameHandler) {
+    gameHandler(); // Chama a função correspondente (ex: handlePauseControl)
     return;
   }
   
