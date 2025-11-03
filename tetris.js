@@ -306,7 +306,7 @@ function showGameOverModal() {
   const elements = getElements(["finalScore", "linesCleared", "gameTime"]);
 
   // Atualizar elementos
-  elements.finalScore.textContent = score;
+  elements.finalScore.textContent = gameState.score;
   elements.linesCleared.textContent = gameState.linesCleared;
   elements.gameTime.textContent = calculateGameTime(gameState.gameStartTime);
 
@@ -988,7 +988,7 @@ const gameState = {
 
 function updateDropInterval() {
   const speedReduction =
-    Math.floor(score / GAME_SPEED.SPEED_INCREASE_THRESHOLD) *
+    Math.floor(gameState.score / GAME_SPEED.SPEED_INCREASE_THRESHOLD) *
     GAME_SPEED.SPEED_INCREASE_AMOUNT;
   gameState.dropInterval = Math.max(
     GAME_SPEED.MIN_DROP_INTERVAL,
@@ -1051,7 +1051,7 @@ function restartGame() {
   p.draw();
 
   // Atualizar pontuação na tela
-  scoreElement.innerHTML = score;
+  scoreElement.innerHTML = gameState.score;
 
   // Esconder modal de Game Over
   hideGameOverModal();
