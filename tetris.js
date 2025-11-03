@@ -610,10 +610,9 @@ Piece.prototype.rotate = function () {
     this.activeTetromino = this.tetromino[this.tetrominoN];
     this.draw();
 
-    if (shouldPlayRotateSound(this) && !isMuted) {
-      playAudioEffect(rotateAudio);
-    }
+    return true;
   }
+  return false;
 };
 
 let score = 0;
@@ -921,7 +920,10 @@ function handleMovementControls(keyCode) {
   if (keyCode === KEY_CODES.ARROW_LEFT) {
     p.moveLeft();
   } else if (keyCode === KEY_CODES.ARROW_UP) {
-    p.rotate();
+    const rotated = p.rotate();
+    if (rotated && shouldPlayRotateSound(p) && !isMuted) {
+      playAudioEffect(rotateAudio);
+    }
   } else if (keyCode === KEY_CODES.ARROW_RIGHT) {
     p.moveRight();
   } else if (keyCode === KEY_CODES.ARROW_DOWN) {
