@@ -472,13 +472,13 @@ function showThemeNotification() {
 
 // the pieces and their colors (agora usando tema dinâmico)
 const PIECES = [
-  [Z, "Z"],
-  [S, "S"],
-  [T, "T"],
-  [O, "O"],
-  [L, "L"],
-  [I, "I"],
-  [J, "J"],
+  [TETROMINOS.Z, "Z"],
+  [TETROMINOS.S, "S"],
+  [TETROMINOS.T, "T"],
+  [TETROMINOS.O, "O"],
+  [TETROMINOS.L, "L"],
+  [TETROMINOS.I, "I"],
+  [TETROMINOS.J, "J"],
 ];
 
 // generate random pieces
