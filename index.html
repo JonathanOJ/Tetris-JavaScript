@@ -166,6 +166,51 @@
         letter-spacing: 1px;
       }
 
+      /* Botão de Mudo */
+      #muteButton {
+        background: linear-gradient(135deg, #4a9eff, #3d8bdb);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        padding: 12px 16px;
+        cursor: pointer;
+        font-size: 20px;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(74, 158, 255, 0.2);
+        color: white;
+        font-family: monospace;
+        min-width: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #muteButton:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(74, 158, 255, 0.3);
+        background: linear-gradient(135deg, #3d8bdb, #4a9eff);
+      }
+
+      #muteButton:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(74, 158, 255, 0.4);
+      }
+
+      #muteButton.muted {
+        background: linear-gradient(135deg, #666, #555);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      #muteButton.muted:hover {
+        background: linear-gradient(135deg, #555, #666);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+      }
+
+      #muteIcon {
+        display: block;
+        line-height: 1;
+      }
+
       /* Modal de Controles */
       #controlsModal {
         display: none;
@@ -303,9 +348,14 @@
     </div>
     <br />
     <canvas id="tetris" width="200" height="400"></canvas>
-    <div>
-      Score:
-      <div id="score">0</div>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+      <div>
+        Score:
+        <div id="score">0</div>
+      </div>
+      <button id="muteButton" onclick="toggleMuteButton()" title="Ligar/Desligar Som">
+        <span id="muteIcon">🔊</span>
+      </button>
     </div>
     <div style="font-size: 14px; margin-top: 10px">
       Controles: ← → ↑ ↓ para mover/rodar | P para pausar/retomar | T para mudar tema | M para ligar/desligar o som | R para reiniciar a partida

@@ -210,6 +210,30 @@ function toggleMute() {
   });
 
   console.log(isMuted ? "🔇 Mudo" : "🔊 Som ativado");
+  updateMuteButtonUI();
+}
+
+// Função para atualizar a interface do botão de mudo
+function updateMuteButtonUI() {
+  const muteButton = document.getElementById("muteButton");
+  const muteIcon = document.getElementById("muteIcon");
+
+  if (muteButton && muteIcon) {
+    if (isMuted) {
+      muteButton.classList.add("muted");
+      muteIcon.textContent = "🔇";
+      muteButton.title = "Ligar Som";
+    } else {
+      muteButton.classList.remove("muted");
+      muteIcon.textContent = "🔊";
+      muteButton.title = "Desligar Som";
+    }
+  }
+}
+
+// Função para ser chamada pelo clique do botão
+function toggleMuteButton() {
+  toggleMute();
 }
 
 // Tema atual e controles
@@ -390,6 +414,7 @@ function getElements(elementIds) {
 function applyUITheme() {
   const body = document.body;
   const scoreElement = document.getElementById("score");
+  const muteButton = document.getElementById("muteButton");
   const allDivs = document.querySelectorAll("div");
   const allLinks = document.querySelectorAll("a");
   const controlsHelpBtn = document.querySelector(".controls-help-btn");
@@ -401,6 +426,15 @@ function applyUITheme() {
   // Aplicar cor do score especificamente
   if (scoreElement) {
     scoreElement.style.color = currentTheme.ui.score;
+  }
+
+  // Aplicar tema ao botão de mudo
+  if (muteButton) {
+    if (!isMuted) {
+      muteButton.style.background = `linear-gradient(135deg, ${currentTheme.ui.accent}, ${adjustColorBrightness(currentTheme.ui.accent, -20)})`;
+      muteButton.style.borderColor = "rgba(255, 255, 255, 0.3)";
+      muteButton.style.boxShadow = `0 4px 12px ${currentTheme.ui.accent}40`;
+    }
   }
 
   // Aplicar cor dos textos gerais
@@ -420,6 +454,25 @@ function applyUITheme() {
     controlsHelpBtn.style.background = `linear-gradient(135deg, ${currentTheme.ui.accent}, ${currentTheme.ui.accent}cc)`;
     controlsHelpBtn.style.boxShadow = `0 2px 8px ${currentTheme.ui.accent}50`;
   }
+}
+
+// Função auxiliar para ajustar brilho de cores
+function adjustColorBrightness(hex, percent) {
+  // Remove o # se presente
+  hex = hex.replace(/^#/, '');
+  
+  // Converte para RGB
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  // Ajusta o brilho
+  const newR = Math.round(Math.min(255, Math.max(0, r + (r * percent / 100))));
+  const newG = Math.round(Math.min(255, Math.max(0, g + (g * percent / 100))));
+  const newB = Math.round(Math.min(255, Math.max(0, b + (b * percent / 100))));
+  
+  // Converte de volta para hex
+  return `#${((1 << 24) + (newR << 16) + (newG << 8) + newB).toString(16).slice(1)}`;
 }
 
 // Função para alternar tema
@@ -1007,6 +1060,7 @@ function drop() {
 
 // Aplicar tema inicial
 applyUITheme();
+updateMuteButtonUI();
 drop();
 
 // função para reiniciar o jogo
