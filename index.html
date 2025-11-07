@@ -337,6 +337,77 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
       }
+      /* --- Tela Inicial --- */
+      #startScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #000000, #1a1a1a);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+        flex-direction: column;
+        font-family: monospace;
+        color: white;
+      }
+
+      #startScreenContent {
+        text-align: center;
+      }
+
+      .game-title {
+        font-size: 48px;
+        color: #4a9eff;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        text-shadow: 2px 2px 5px rgba(74, 158, 255, 0.5);
+        margin-bottom: 10px;
+      }
+
+      .game-subtitle {
+        color: #cccccc;
+        font-size: 18px;
+        margin-bottom: 30px;
+      }
+
+      #startButton, #controlsButton {
+        display: block;
+        margin: 10px auto;
+        padding: 12px 25px;
+        font-size: 18px;
+        font-weight: bold;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: monospace;
+      }
+
+      #startButton {
+        background: linear-gradient(135deg, #4a9eff, #357abd);
+        color: white;
+      }
+
+      #startButton:hover {
+        background: linear-gradient(135deg, #357abd, #4a9eff);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+      }
+
+      #controlsButton {
+        background: linear-gradient(135deg, #555, #666);
+        color: white;
+      }
+
+      #controlsButton:hover {
+        background: linear-gradient(135deg, #666, #777);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+      }
+
     </style>
   </head>
   <body>
@@ -464,7 +535,41 @@
       </div>
     </div>
 
+    <!-- Tela Inicial -->
+<div id="startScreen">
+  <div id="startScreenContent">
+    <h1 class="game-title">TETRIS</h1>
+    <p class="game-subtitle">Versão aprimorada 🎮</p>
+    <button id="startButton" onclick="startGame()">▶️ Iniciar Jogo</button>
+    <button id="controlsButton" onclick="showControlsModal()">❓ Controles</button>
+  </div>
+</div>
+
     <script src="tetrominoes.js"></script>
     <script src="tetris.js"></script>
+    <script>
+      // Oculta o jogo até que o usuário clique em "Iniciar"
+      document.addEventListener("DOMContentLoaded", () => {
+        document.querySelector("canvas").style.display = "none";
+        document.querySelector("#score").parentElement.style.display = "none";
+        document.querySelector(".controls-help-btn").style.display = "none";
+      });
+
+      function startGame() {
+        // Remove a tela inicial
+        document.getElementById("startScreen").style.display = "none";
+        
+        // Mostra o jogo e os controles
+        document.querySelector("canvas").style.display = "block";
+        document.querySelector("#score").parentElement.style.display = "flex";
+        document.querySelector(".controls-help-btn").style.display = "block";
+
+        // Inicia o jogo principal
+        if (typeof initGame === "function") {
+          initGame(); // caso você tenha uma função de inicialização
+        }
+      }
+  </script>
+
   </body>
 </html>
