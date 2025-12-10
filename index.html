@@ -344,7 +344,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(135deg, #000000, #1a1a1a);
+        background: var(--background);
         display: flex;
         justify-content: center;
         align-items: center;
@@ -539,9 +539,11 @@
 <div id="startScreen">
   <div id="startScreenContent">
     <h1 class="game-title">TETRIS</h1>
-    <p class="game-subtitle">Versão aprimorada 🎮</p>
+    <p class="game-subtitle">🎮</p>
     <button id="startButton" onclick="startGame()">▶️ Iniciar Jogo</button>
-    <button id="controlsButton" onclick="showControlsModal()">❓ Controles</button>
+  </div>
+    <div style="font-size: 14px; margin-top: 10px">
+    Controles: ← → ↑ ↓ para mover/rodar | P para pausar/retomar | T para mudar tema | M para ligar/desligar o som | R para reiniciar a partida
   </div>
 </div>
 
