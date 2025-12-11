@@ -488,6 +488,7 @@ function switchTheme() {
   if (!gameState.gameOver && p) {
     p.draw();
   }
+  drawNext();
 
   // Mostrar notificação do tema atual
   showThemeNotification();
@@ -549,7 +550,8 @@ function randomPiece() {
   return new Piece(PIECES[r][0], PIECES[r][1]);
 }
 
-let p = randomPiece();
+let nextP = randomPiece();
+let p;
 
 // The Object Piece
 
@@ -605,7 +607,7 @@ Piece.prototype.moveDown = async function () {
 
     // travar peça e gerar nova
     await this.lock();
-    p = randomPiece();
+    assignNewPiece();
   }
 };
 
@@ -1017,7 +1019,7 @@ const gameState = {
   dropStart: Date.now(),
   gameStartTime: Date.now(),
   dropInterval: GAME_SPEED.INITIAL_DROP_INTERVAL,
-  gameOver: false,
+  gameOver: true,
   isPaused: false,
   isWindowBlurred: false,
   isAutoPaused: false,
@@ -1061,7 +1063,42 @@ function drop() {
 // Aplicar tema inicial
 applyUITheme();
 updateMuteButtonUI();
+
+function assignNewPiece() {
+  p = nextP;
+  nextP = randomPiece();
+  p.x = GAME_CONSTANTS.INITIAL_PIECE_X;
+  p.y = GAME_CONSTANTS.INITIAL_PIECE_Y;
+  drawNext();
+}
+
+assignNewPiece();
 drop();
+
+function drawNext() {
+  const nextCvs = document.getElementById("nextCanvas");
+  const nextCtx = nextCvs.getContext("2d");
+  const size = 20;
+
+  nextCtx.clearRect(0, 0, nextCvs.width, nextCvs.height);
+
+  const tetWidth = nextP.activeTetromino[0].length;
+  const tetHeight = nextP.activeTetromino.length;
+
+  const offsetX = (4 - tetWidth) * size / 2;
+  const offsetY = (4 - tetHeight) * size / 2;
+
+  for (let r = 0; r < tetHeight; r++) {
+    for (let c = 0; c < tetWidth; c++) {
+      if (nextP.activeTetromino[r][c]) {
+        nextCtx.fillStyle = currentTheme.pieces[nextP.color];
+        nextCtx.fillRect(offsetX + c * size, offsetY + r * size, size, size);
+        nextCtx.strokeStyle = currentTheme.stroke;
+        nextCtx.strokeRect(offsetX + c * size, offsetY + r * size, size, size);
+      }
+    }
+  }
+}
 
 // função para reiniciar o jogo
 function restartGame() {
@@ -1084,7 +1121,7 @@ function restartGame() {
   }
 
   // Gerar nova peça
-  p = randomPiece();
+  //assignNewPiece();
 
   // Redesenhar o board e a peça
   drawBoard();
@@ -1102,5 +1139,5 @@ function restartGame() {
     playAudioEffect(backgroundMusic, false);
   }
   // Reiniciar o loop do jogo
-  drop();
+  //drop();
 }

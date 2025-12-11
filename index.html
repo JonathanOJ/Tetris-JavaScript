@@ -428,6 +428,10 @@
         <span id="muteIcon">🔊</span>
       </button>
     </div>
+    <div id="nextPieceContainer" style="display: none; text-align: center; margin-top: 20px; font-size: 20px; font-weight: bold; font-family: monospace;">
+      Next Piece
+      <canvas id="nextCanvas" width="80" height="80" style="display: block; margin: 0 auto;"></canvas>
+    </div>
     <div style="font-size: 14px; margin-top: 10px">
       Controles: ← → ↑ ↓ para mover/rodar | P para pausar/retomar | T para mudar tema | M para ligar/desligar o som | R para reiniciar a partida
     </div>
@@ -555,22 +559,33 @@
         document.querySelector("canvas").style.display = "none";
         document.querySelector("#score").parentElement.style.display = "none";
         document.querySelector(".controls-help-btn").style.display = "none";
+        document.getElementById("nextPieceContainer").style.display = "none";
       });
 
-      function startGame() {
-        // Remove a tela inicial
-        document.getElementById("startScreen").style.display = "none";
-        
-        // Mostra o jogo e os controles
-        document.querySelector("canvas").style.display = "block";
-        document.querySelector("#score").parentElement.style.display = "flex";
-        document.querySelector(".controls-help-btn").style.display = "block";
+        function startGame() {
+      // Remove a tela inicial
+      document.getElementById("startScreen").style.display = "none";
+      
+      // Mostra todos os elementos do jogo
+      document.querySelector("canvas").style.display = "block";
+      document.querySelector("#score").parentElement.style.display = "flex";
+      document.querySelector(".controls-help-btn").style.display = "block";
+      document.getElementById("nextPieceContainer").style.display = "block";
 
-        // Inicia o jogo principal
-        if (typeof initGame === "function") {
-          initGame(); // caso você tenha uma função de inicialização
-        }
+      // === AQUI O JOGO COMEÇA DE VERDADE ===
+      gameState.gameOver = false;
+      gameState.gameStartTime = Date.now();
+      gameState.dropStart = Date.now();
+
+      assignNewPiece();   // gera primeira peça + próxima
+      p.draw();           // desenha a peça atual
+      drawNext();         // mostra a próxima peça
+      drop();             // inicia o loop de queda
+
+      if (!isMuted) {
+        playMusic();
       }
+    }
   </script>
 
   </body>
